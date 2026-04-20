@@ -1,0 +1,24 @@
+[project]
+name = "relextract-llm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Miguel-Angel Sicilia", email = "msicilia@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "instructor>=1.14.5",
+    "ollama>=0.6.1",
+    "outlines>=1.2.12",
+    "pandas>=3.0.2",
+    "pydantic>=2.12.5",
+    "scipy>=1.17.1",
+]
+
+[project.scripts]
+relextract-llm = "relextract_llm:main"
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
