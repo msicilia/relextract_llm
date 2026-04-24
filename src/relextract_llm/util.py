@@ -134,7 +134,7 @@ def get_prompt_instructions(dataset_name: str, with_markers: bool,
                  "effect against the disease "
                  "(keywords: not associated, no significant association, protective, reduces risk of, "
                  "inversely associated)\n"
-                 "When in doubt between the two, prefer 'positive' only if an association is clearly stated.")
+                 )
     elif dataset_name == "DDI_BLURB":
         intro = ("Extract drug-drug interactions from the text below. "
                  "Only extract interactions explicitly mentioned in the text. "
@@ -160,7 +160,7 @@ def get_prompt_instructions(dataset_name: str, with_markers: bool,
                  "  DDI-false — No interaction is stated; the drugs are only co-mentioned. "
                  "Use DDI-false when the text explicitly says there is no interaction, or when the drugs appear "
                  "in the same sentence purely for context (e.g. clinical trial co-administration without interaction claim).\n"
-                 "Priority order when unsure: DDI-mechanism > DDI-effect > DDI-advise > DDI-int > DDI-false.")
+                 "")
     elif dataset_name == "EU-ADR_BioBERT":
         intro = ("Extract gene-disease associations from the text below. "
                  "Only extract associations explicitly mentioned in the text. "
@@ -178,7 +178,7 @@ def get_prompt_instructions(dataset_name: str, with_markers: bool,
                  "effect against the disease "
                  "(keywords: not associated, no significant association, protective, reduces risk of, "
                  "inversely associated)\n"
-                 "When in doubt between the two, prefer 'positive' only if an association is clearly stated.")
+                 "")
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 

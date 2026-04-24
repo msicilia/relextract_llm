@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Annotated, List
 
 import ollama
+from tqdm import tqdm
 import instructor
 import outlines
 from pydantic import BaseModel, Field, ValidationError
@@ -29,21 +30,28 @@ class RelationList(BaseModel):
 # ---------------------------------------------------------------------------
 # Configuration grid
 # ---------------------------------------------------------------------------
-models       = ["ollama/MedAIBase/MedGemma1.5:4b"] # , "ollama/mistral"]
+models       = [
+                "ollama/medgemma:4b"
+                #"ollama/MedAIBase/MedGemma1.5:4b"] # , "ollama/mistral"
+                ]
 datasets     = ["chemprot_BLURB", "GAD_BLURB", "DDI_BLURB", "EU-ADR_BioBERT"]
 temperatures = [0, 0.5] # , 1.0]
 # Modes:
 #   zero_shot          — no examples in the prompt
 #   few_shot_partial   — examples covering ~half the relation types (ceil(n_types/2))
 #   few_shot_exhaustive — examples covering every relation type (at least one each)
-modes        = ["zero_shot", "few_shot_partial", "few_shot_exhaustive"]
+modes        = [
+                "zero_shot", 
+                "few_shot_partial", 
+                "few_shot_exhaustive"]
 markers_options = [True] # [True, False]
 backends     = ["instructor", "outlines"]
 
 RESULTS_PATH       = Path(__file__).resolve().parents[2] / "results" / "results.csv"
 EXAMPLES_DIR       = Path(__file__).resolve().parents[2] / "results" / "examples"
-config_sample_pct  = 0.3  # fraction of pending configs to run in this session (0.0–1.0)
-examples_sample_pct = 0.5 # fraction of eval examples to sample per experiment (0.0–1.0)
+config_sample_pct  = 0.1  # fraction of pending configs to run in this session (0.0–1.0)
+examples_sample_pct = 1.0 # fraction of eval examples to sample per experiment (0.0–1.0)
+# N_EVAL_SAMPLES     = 100     # exact number of eval examples to sample per experiment
 MAX_LOG_EXAMPLES   = 10     # max examples written to the per-experiment log file
 
 
@@ -276,7 +284,10 @@ print(f"Running       : {len(to_run)}  ({config_sample_pct:.0%} of pending)")
 # ---------------------------------------------------------------------------
 stats = MatchCounter()
 
-for dataset, model, temp, mode, with_markers, backend in to_run:
+pbar = tqdm(to_run, unit="cfg")
+for dataset, model, temp, mode, with_markers, backend in pbar:
+    model_short = model.split("/")[-1]
+    pbar.set_description(f"{dataset} | {model_short} | t={temp} | {mode}")
 
     stats.start_experiment(
         model=model, dataset=dataset, temperature=temp,
@@ -294,19 +305,9 @@ for dataset, model, temp, mode, with_markers, backend in to_run:
     sample_size   = max(1, round(len(eval_data) * examples_sample_pct))
     random_sample = random.sample(eval_data, min(len(eval_data), sample_size))
 
-    print(f"\n>>> {dataset} | {model} | temp={temp} | {mode} | markers={with_markers} | backend={backend}")
-    print(f"    eval={len(eval_data)}  sample={len(random_sample)} ({examples_sample_pct:.0%})  shots={len(shots)}")
-
-    # first = random_sample[0]
-    # text  = first.text_with_entity_marker if with_markers else first.text
-    # print(f"\n--- Sanity check prompt (ID: {first.id}) ---")
-    # print(f"{prompt_instr}\n\nExtract from this text:\n\n{text}")
-    # print("--- End of prompt ---\n")
-
     example_records: list = []
 
-    for example in random_sample:
-        print(f"  Processing ID: {example.id}  len={len(example.text_with_entity_marker)}")
+    for example in tqdm(random_sample, desc="examples", unit="ex", leave=False):
         text   = example.text_with_entity_marker if with_markers else example.text
         prompt = f"{prompt_instr}\n\nExtract from this text:\n\n{text}"
         try:
@@ -315,14 +316,11 @@ for dataset, model, temp, mode, with_markers, backend in to_run:
             else:
                 resp = run_outlines(model, prompt, temp)
         except ValidationError as e:
-            print(f"  ValidationError on ID {example.id}: {e}")
             resp = []
         except Exception as e:
-            print(f"  Error [{type(e).__name__}] on ID {example.id}: {e}")
             resp = []
 
         stats.update(example.relations, resp)
-        print(f"  ID: {example.id} | found={len(resp)} | expected={len(example.relations)}")
         example_records.append({
             "id":           example.id,
             "prompt":       prompt,
@@ -332,7 +330,6 @@ for dataset, model, temp, mode, with_markers, backend in to_run:
 
     stats.finish_experiment()
     append_result(stats._results[-1], RESULTS_PATH)
-    print(f"  Result saved → {RESULTS_PATH}")
 
     slug = _config_slug(dataset, model, temp, mode, with_markers, backend)
     write_example_log(slug, shots, example_records)
