@@ -24,6 +24,18 @@ DATASET_RELATION_TYPES: dict[str, List[str]] = {
     "GAD_BLURB":       ["positive", "negative"],
     "DDI_BLURB":       ["DDI-advise", "DDI-effect", "DDI-int", "DDI-mechanism", "DDI-false"],
     "EU-ADR_BioBERT":  ["positive", "negative"],
+    "SemEval2010_task8": [
+        "Cause-Effect(e1,e2)", "Cause-Effect(e2,e1)",
+        "Component-Whole(e1,e2)", "Component-Whole(e2,e1)",
+        "Content-Container(e1,e2)", "Content-Container(e2,e1)",
+        "Entity-Destination(e1,e2)", "Entity-Destination(e2,e1)",
+        "Entity-Origin(e1,e2)", "Entity-Origin(e2,e1)",
+        "Instrument-Agency(e1,e2)", "Instrument-Agency(e2,e1)",
+        "Member-Collection(e1,e2)", "Member-Collection(e2,e1)",
+        "Message-Topic(e1,e2)", "Message-Topic(e2,e1)",
+        "Product-Producer(e1,e2)", "Product-Producer(e2,e1)",
+        "Other",
+    ],
 }
 
 
@@ -179,6 +191,33 @@ def get_prompt_instructions(dataset_name: str, with_markers: bool,
                  "(keywords: not associated, no significant association, protective, reduces risk of, "
                  "inversely associated)\n"
                  "")
+    elif dataset_name == "SemEval2010_task8":
+        intro = ("Extract the semantic relation between the two marked entities. "
+                 "Return exactly one relation per example. "
+                 "entity_1 must be the text inside [E1]...[/E1] and entity_2 the text inside [E2]...[/E2]. "
+                 "relation_type must be one of the codes below, EXACTLY as written.")
+        markers = ("The first entity is marked with [E1]...[/E1] and the second with [E2]...[/E2]. "
+                   "Use the literal text inside those markers as the entity values.")
+        types = ("Relation type codes — [E1] is e1, [E2] is e2 in the direction notation:\n"
+                 "  Cause-Effect(e1,e2) — e1 causes e2\n"
+                 "  Cause-Effect(e2,e1) — e2 causes e1\n"
+                 "  Component-Whole(e1,e2) — e1 is a component of e2\n"
+                 "  Component-Whole(e2,e1) — e2 is a component of e1\n"
+                 "  Content-Container(e1,e2) — e1 is contained in e2\n"
+                 "  Content-Container(e2,e1) — e2 is contained in e1\n"
+                 "  Entity-Destination(e1,e2) — e1 moves to e2\n"
+                 "  Entity-Destination(e2,e1) — e2 moves to e1\n"
+                 "  Entity-Origin(e1,e2) — e1 originates from e2\n"
+                 "  Entity-Origin(e2,e1) — e2 originates from e1\n"
+                 "  Instrument-Agency(e1,e2) — e1 is the instrument, e2 is the agent\n"
+                 "  Instrument-Agency(e2,e1) — e2 is the instrument, e1 is the agent\n"
+                 "  Member-Collection(e1,e2) — e1 is a member of e2\n"
+                 "  Member-Collection(e2,e1) — e2 is a member of e1\n"
+                 "  Message-Topic(e1,e2) — e1 is the message, e2 is the topic\n"
+                 "  Message-Topic(e2,e1) — e2 is the message, e1 is the topic\n"
+                 "  Product-Producer(e1,e2) — e1 is the product, e2 is the producer\n"
+                 "  Product-Producer(e2,e1) — e2 is the product, e1 is the producer\n"
+                 "  Other — none of the above relations hold")
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 

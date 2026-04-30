@@ -5,13 +5,15 @@ from pathlib import Path
 
 from relextract_llm.util import get_relations
 
-DATASETS = ["chemprot_BLURB", "GAD_BLURB", "DDI_BLURB", "EU-ADR_BioBERT"]
+DATASETS = ["chemprot_BLURB", "GAD_BLURB", "DDI_BLURB", "EU-ADR_BioBERT", "SemEval2010_task8"]
 
-def _load_negative_type(dataset_name: str) -> str:
-    """Return the relation type label with id=0 (the negative/false class)."""
+def _load_negative_type(dataset_name: str) -> str | None:
+    """Return the relation type label with id=0 (the negative/false class), or None."""
     path = Path(__file__).resolve().parents[2] / "data" / dataset_name / "relation_types.json"
+    if not path.exists():
+        return None
     rel_types = json.loads(path.read_text(encoding="utf-8"))
-    return next(label for label, meta in rel_types.items() if meta["id"] == 0)
+    return next((label for label, meta in rel_types.items() if meta["id"] == 0), None)
 
 rows = []
 for dataset_name in DATASETS:
@@ -25,7 +27,10 @@ for dataset_name in DATASETS:
     text_lengths = [len(ex.text) for ex in examples]
     relation_types = {r.relation_type for r in all_relations}
     total_relations = len(all_relations)
-    positive_count = sum(1 for r in all_relations if r.relation_type != negative_type)
+    positive_count = (
+        sum(1 for r in all_relations if r.relation_type != negative_type)
+        if negative_type else len(all_relations)
+    )
 
     rows.append({
         "dataset":                dataset_name,

@@ -34,7 +34,7 @@ models       = [
                 "ollama/medgemma:4b"
                 #"ollama/MedAIBase/MedGemma1.5:4b"] # , "ollama/mistral"
                 ]
-datasets     = ["chemprot_BLURB", "GAD_BLURB", "DDI_BLURB", "EU-ADR_BioBERT"]
+datasets     = ["chemprot_BLURB", "GAD_BLURB", "DDI_BLURB", "EU-ADR_BioBERT", "SemEval2010_task8"]
 temperatures = [0, 0.5] # , 1.0]
 # Modes:
 #   zero_shot          — no examples in the prompt
@@ -49,8 +49,8 @@ backends     = ["instructor", "outlines"]
 
 RESULTS_PATH       = Path(__file__).resolve().parents[2] / "results" / "results.csv"
 EXAMPLES_DIR       = Path(__file__).resolve().parents[2] / "results" / "examples"
-config_sample_pct  = 0.1  # fraction of pending configs to run in this session (0.0–1.0)
-examples_sample_pct = 1.0 # fraction of eval examples to sample per experiment (0.0–1.0)
+config_sample_pct  = 0.3 # fraction of pending configs to run in this session (0.0–1.0)
+examples_sample_pct = 0.1 # fraction of eval examples to sample per experiment (0.0–1.0)
 # N_EVAL_SAMPLES     = 100     # exact number of eval examples to sample per experiment
 MAX_LOG_EXAMPLES   = 10     # max examples written to the per-experiment log file
 
@@ -66,7 +66,10 @@ def load_done_configs(path: Path) -> set:
         return set()
     done = set()
     with open(path, newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
+        reader = csv.DictReader(f)
+        reader.fieldnames = [name.strip() for name in (reader.fieldnames or [])]
+        for row in reader:
+            row = {k.strip(): v.strip() for k, v in row.items()}
             done.add((
                 row["dataset"],
                 row["model"],
