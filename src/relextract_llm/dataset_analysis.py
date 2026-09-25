@@ -22,8 +22,8 @@ for dataset_name in DATASETS:
     negative_type = _load_negative_type(dataset_name)
 
     n = len(examples)
-    all_relations = [r for ex in examples for r in ex.relations]
-    relations_per_example = [len(ex.relations) for ex in examples]
+    all_relations = [ex.relation for ex in examples]
+    relations_per_example = [1] * len(examples)  # always 1 after multi-relation filtering
     text_lengths = [len(ex.text) for ex in examples]
     relation_types = {r.relation_type for r in all_relations}
     total_relations = len(all_relations)
